@@ -3,7 +3,6 @@
 
 ## Yibo Fu 
 
-G25190736
 
 **Algorithm Choice**
 
