@@ -54,7 +54,9 @@ class Game:
                 if len(count) == 1 and count.index[0] != EMPTY:
                     return count.index[0]
 
-                s = pd.Series(np.diag(self.board.iloc[:,::-1].loc[i:i + self.m - 1, j:j + self.m - 1]))
+                df = self.board.iloc[:, ::-1]
+                df.columns = self.board.columns
+                s = pd.Series(np.diag(df.loc[i:i + self.m - 1, j:j + self.m - 1]))
                 count = s.value_counts()
                 if len(count) == 1 and count.index[0] != EMPTY:
                     return count.index[0]
@@ -155,14 +157,14 @@ def evaluate(game):
     return score
 
 
-def alpha_beta(game, max_depth = 5):
+def alpha_beta(game, max_depth=5):
 
     best_score = -INF
     best_action = None
 
     for action in game.available_actions():
         i, j = action
-        v = min_value(game.apply_action([i, j, player]), best_score, INF, max_depth - 1)
+        v = min_value(game.apply_action([i, j, player]), best_score, INF, max_depth-1)
         # print(action, v)
         if v > best_score:
             best_score = v
@@ -196,7 +198,6 @@ p1 = {
     "API_KEY": "31dc33beb3873e2bd595",
     "TEAM_ID": "1223"
 }
-
 p2 = {
     "function": alpha_beta,
     "player": Player(X),
@@ -222,6 +223,7 @@ def computer_vs_computer(player1, player2):
 
         game = get_game(gameId, player2)
         action = player2['function'](game, 1)
+        print(action)
         make_a_move(gameId, (action[0], action[1]), player2)
         game = get_game(gameId, player2)
         print(game)
@@ -230,8 +232,7 @@ def computer_vs_computer(player1, player2):
             break
 
 
-#USERID = "392"
-#API_KEY = "430b12204290d33a0edc"
+
 import json
 url = "https://www.notexponential.com/aip2pgaming/api/index.php"
 
@@ -246,8 +247,8 @@ def create_a_new_game(player1, player2):
     payload = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; " \
               "name=\"type\"\r\n\r\ngame\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; " \
               "name=\"gameType\"\r\n\r\nTTT\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; " \
-              "name=\"teamId1\"\r\n\r\n"+teamId1+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data;" \
-                                                 " name=\"teamId2\"\r\n\r\n"+teamId2+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"
+              "name=\"teamId1\"\r\n\r\n"+teamId1+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; " \
+                                                 "name=\"teamId2\"\r\n\r\n"+teamId2+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"
 
     headers = {
         'content-type': "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW",
@@ -272,11 +273,9 @@ def create_a_new_game2(player1, player2):
     USERID = player1["USERID"]
     API_KEY = player1["API_KEY"]
     print(teamId1,teamId2, USERID, API_KEY)
-    payload = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data;" \
-              " name=\"type\"\r\n\r\ngame\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data;" \
-              " name=\"gameType\"\r\n\r\nTTT\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data;" \
-              " name=\"teamId1\"\r\n\r\n"+teamId1+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; " \
-                                                  "name=\"teamId2\"\r\n\r\n"+teamId2+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"
+    payload = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"type\"\r\n\r\ngame\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"gameType\"\r\n\r\nTTT\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"teamId1\"\r\n\r\n"+teamId1+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"teamId2\"\r\n\r\n"+teamId2+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"
+
+    # payload = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"type\"\r\n\r\ngame\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"gameType\"\r\n\r\nTTT\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"teamId1\"\r\n\r\n1223\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"teamId2\"\r\n\r\n1227\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"
 
     headers = {
         'content-type': "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW",
@@ -322,7 +321,6 @@ def get_game(gameId, player):
     s = data.decode("utf-8")
 
     res = json.loads(s)
-    # print(s)
     b = [l for l in res['output'].split("\n") if len(l) > 0]
     n = len(b)
     game = Game(n, res['target'])
@@ -437,3 +435,7 @@ def get_the_move_list(gameId, count, player1, player2):
 if __name__ == '__main__':
     # human_vs_computer()
     computer_vs_computer(p1, p2)
+    # df = pd.read_csv("1.csv", header=None)
+    # game = Game(12, 6)
+    # game.board = df
+    # print(game.check_win())
