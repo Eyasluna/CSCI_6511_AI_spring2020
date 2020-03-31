@@ -155,14 +155,14 @@ def evaluate(game):
     return score
 
 
-def alpha_beta(game, max_depth=5):
+def alpha_beta(game, max_depth = 5):
 
     best_score = -INF
     best_action = None
 
     for action in game.available_actions():
         i, j = action
-        v = min_value(game.apply_action([i, j, player]), best_score, INF, max_depth-1)
+        v = min_value(game.apply_action([i, j, player]), best_score, INF, max_depth - 1)
         # print(action, v)
         if v > best_score:
             best_score = v
@@ -196,6 +196,7 @@ p1 = {
     "API_KEY": "31dc33beb3873e2bd595",
     "TEAM_ID": "1223"
 }
+
 p2 = {
     "function": alpha_beta,
     "player": Player(X),
@@ -207,9 +208,11 @@ p2 = {
 
 def computer_vs_computer(player1, player2):
     gameId = create_a_new_game(player1, player2)
+    print("gameID: ", gameId)
     while True:
         game = get_game(gameId, player1)
-        action = player1['function'](game, 2)
+        action = player1['function'](game, 1)
+        print(action)
         make_a_move(gameId, (action[0], action[1]), player1)
         game = get_game(gameId, player1)
         print(game)
@@ -218,12 +221,12 @@ def computer_vs_computer(player1, player2):
             break
 
         game = get_game(gameId, player2)
-        action = player2['function'](game, 2)
+        action = player2['function'](game, 1)
         make_a_move(gameId, (action[0], action[1]), player2)
         game = get_game(gameId, player2)
         print(game)
         if game.check_win():
-            print("player1 win")
+            print("player2 win")
             break
 
 
@@ -234,30 +237,103 @@ url = "https://www.notexponential.com/aip2pgaming/api/index.php"
 
 
 def create_a_new_game(player1, player2):
-    """return game id"""
     teamId1, teamId2 = player1["TEAM_ID"], player2["TEAM_ID"]
     USERID = player1["USERID"]
     API_KEY = player1["API_KEY"]
+    import http.client
+    conn = http.client.HTTPSConnection("www.notexponential.com")
 
-    payload = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"type\"\r\n\r\ngame\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"gameType\"\r\n\r\nTTT\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"teamId1\"\r\n\r\n"+teamId1+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"teamId2\"\r\n\r\n"+teamId2+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"
+    payload = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; " \
+              "name=\"type\"\r\n\r\ngame\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; " \
+              "name=\"gameType\"\r\n\r\nTTT\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; " \
+              "name=\"teamId1\"\r\n\r\n"+teamId1+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data;" \
+                                                 " name=\"teamId2\"\r\n\r\n"+teamId2+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"
+
     headers = {
-        #'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36",
         'content-type': "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW",
         'authorization': "Basic Og==",
         'userid': USERID,
         'x-api-key': API_KEY,
         'cache-control': "no-cache",
+        'postman-token': "41d5f39d-0533-74b4-4c35-9656b8c539bd"
+    }
+
+    conn.request("POST", "/aip2pgaming/api/index.php", payload, headers)
+
+    res = conn.getresponse()
+    data = res.read()
+
+    s = data.decode("utf-8")
+    return json.loads(s)["gameId"]
+
+def create_a_new_game2(player1, player2):
+    """return game id"""
+    teamId1, teamId2 = player1["TEAM_ID"], player2["TEAM_ID"]
+    USERID = player1["USERID"]
+    API_KEY = player1["API_KEY"]
+    print(teamId1,teamId2, USERID, API_KEY)
+    payload = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data;" \
+              " name=\"type\"\r\n\r\ngame\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data;" \
+              " name=\"gameType\"\r\n\r\nTTT\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data;" \
+              " name=\"teamId1\"\r\n\r\n"+teamId1+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; " \
+                                                  "name=\"teamId2\"\r\n\r\n"+teamId2+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"
+
+    headers = {
+        'content-type': "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW",
+    'authorization': "Basic Og==",
+    'userid': "930",
+    'x-api-key': "31dc33beb3873e2bd595",
+    'cache-control': "no-cache",
+    'postman-token': "d309f41d-1c1e-faa4-1ac5-20c6e4b6fb1c"
     }
 
     response = requests.request("POST", url, data=payload, headers=headers)
     if str(response.status_code).startswith("4"):
         print("server error!")
-        print(response.status_code)
 
+    print(response.text)
     return json.loads(response.text)["gameId"]
 
 
 def get_game(gameId, player):
+    import http.client
+
+    USERID = player["USERID"]
+    API_KEY = player["API_KEY"]
+
+    conn = http.client.HTTPSConnection("www.notexponential.com")
+
+    payload = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"type\"\r\n\r\nboardString\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"gameId\"\r\n\r\n"+str(gameId)+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"
+
+    headers = {
+        'content-type': "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW",
+        'authorization': "Basic Og==",
+        'userid': USERID,
+        'x-api-key': API_KEY,
+        'cache-control': "no-cache",
+        'postman-token': "75910fd5-a16c-ed0a-96eb-047b73b841ed"
+    }
+
+    conn.request("GET", "/aip2pgaming/api/index.php?type=boardString&gameId="+str(gameId), payload, headers)
+
+    res = conn.getresponse()
+    data = res.read()
+
+    s = data.decode("utf-8")
+
+    res = json.loads(s)
+    # print(s)
+    b = [l for l in res['output'].split("\n") if len(l) > 0]
+    n = len(b)
+    game = Game(n, res['target'])
+    for i in range(n):
+        line = b[i]
+        for j in range(n):
+            game.board.loc[i, j] = line[j]
+    return game
+
+
+def get_game2(gameId, player):
     url = "https://www.notexponential.com/aip2pgaming/api/index.php"
 
     querystring = {"type": "boardString", "gameId": str(gameId)}
@@ -275,7 +351,7 @@ def get_game(gameId, player):
     }
 
     response = requests.request("GET", url, data=payload, headers=headers, params=querystring)
-
+    print(response)
     res = json.loads(response.text)
     n = len(res['output'])
     game = Game(n, res['target'])
@@ -288,6 +364,37 @@ def get_game(gameId, player):
 
 
 def make_a_move(gameId, move, player):
+    teamId = player["TEAM_ID"]
+    USERID = player["USERID"]
+    API_KEY = player["API_KEY"]
+
+    import http.client
+
+    conn = http.client.HTTPSConnection("www.notexponential.com")
+
+    payload = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"type\"\r\n\r\nmove\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"gameId\"\r\n\r\n"+str(gameId)+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"move\"\r\n\r\n"+str(move[0])+","+str(move[1])+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"teamId\"\r\n\r\n"+teamId+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"
+
+    headers = {
+        'content-type': "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW",
+        'authorization': "Basic Og==",
+        'userid': USERID,
+        'x-api-key': API_KEY,
+        'cache-control': "no-cache",
+        'postman-token': "50b6539a-f0de-8784-4a2a-2813322019ae"
+    }
+
+    conn.request("POST", "/aip2pgaming/api/index.php", payload, headers)
+
+    res = conn.getresponse()
+    data = res.read()
+
+    s = data.decode("utf-8")
+    print(s)
+
+    return json.loads(s)
+
+
+def make_a_move2(gameId, move, player):
     teamId = player["TEAM_ID"]
     USERID = player["USERID"]
     API_KEY = player["API_KEY"]
