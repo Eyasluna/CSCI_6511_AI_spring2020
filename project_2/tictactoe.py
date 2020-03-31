@@ -11,6 +11,9 @@ INF = float('inf')
 player = X
 oppo = O
 
+N = 4
+M = 3
+
 class Game:
 
     def __init__(self, n, m):
@@ -24,7 +27,7 @@ class Game:
 
     def check_win(self):
         for j in range(self.n):
-            for i in range(self.n-self.m):
+            for i in range(self.n-self.m+1):
 
                 s = self.board.loc[j, i:i+self.m-1]
                 count = s.value_counts()
@@ -36,8 +39,8 @@ class Game:
                 if len(count) == 1 and count.index[0] != EMPTY:
                     return count.index[0]
 
-        for i in range(self.n-self.m):
-            for j in range(self.n-self.m):
+        for i in range(self.n-self.m+1):
+            for j in range(self.n-self.m+1):
                 s = pd.Series(np.diag(self.board.loc[i:i+self.m-1, j:j+self.m-1]))
                 count = s.value_counts()
                 if len(count) == 1 and count.index[0] != EMPTY:
@@ -161,7 +164,7 @@ def alpha_beta(game, max_depth=5):
 
 
 def human_vs_computer():
-    game = make_new_game(4, 3, None)
+    game = make_new_game(N, M, None)
     while game.check_win() is None:
         action = alpha_beta(game, 3)
         game = game.apply_action([action[0], action[1], player])
