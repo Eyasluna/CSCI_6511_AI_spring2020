@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 import numpy as np
 from copy import deepcopy
+import time
 
 EMPTY = "-"
 X = 'X'
@@ -19,7 +20,7 @@ class Player:
 
     def __init__(self, symbol):
         self.symbol = symbol
-        self.oppo = X if symbol == O else X
+        self.oppo = X if symbol == O else O
 
 
 class Game:
@@ -36,7 +37,6 @@ class Game:
     def check_win(self):
         for j in range(self.n):
             for i in range(self.n-self.m+1):
-
                 s = self.board.loc[j, i:i+self.m-1]
                 count = s.value_counts()
                 if len(count) == 1 and count.index[0] != EMPTY:
@@ -107,7 +107,7 @@ def min_value(game, alpha, beta, depth, p):
     v = INF
     for action in game.available_actions():
         i, j = action
-        v = min(v, max_value(game.apply_action([i, j, oppo if p == player else player]), alpha, beta, depth-1, p))
+        v = min(v, max_value(game.apply_action([i, j, X if p == O else X]), alpha, beta, depth-1, p))
         if v <= alpha:
             return v
         beta = min(beta, v)
@@ -116,7 +116,7 @@ def min_value(game, alpha, beta, depth, p):
 
 def check_score(s, game, p):
     s = s.to_dict()
-    o1 = oppo if p == player else player
+    o1 = X if p == O else O
     p1 = p
     on = s[o1] if o1 in s else 0
     pn = s[p1] if p1 in s else 0
@@ -127,7 +127,7 @@ def check_score(s, game, p):
 
     if on > 0:
         if pn == 0:
-            return -(game.n ** on)
+            return -(game.n ** (on+2))
         else:
             return 0
     else:
@@ -168,6 +168,7 @@ def alpha_beta(game, max_depth=5, p=player):
         i, j = action
         v = min_value(game.apply_action([i, j, p]), best_score, INF, max_depth-1, p)
         # print(action, v)
+        # print(action, v)
         if v > best_score:
             best_score = v
             best_action = [i, j, p]
@@ -200,6 +201,7 @@ p1 = {
     "API_KEY": "31dc33beb3873e2bd595",
     "TEAM_ID": "1223"
 }
+
 p2 = {
     "function": alpha_beta,
     "player": Player(X),
@@ -214,7 +216,7 @@ def computer_vs_computer(player1, player2):
     print("gameID: ", gameId)
     while True:
         game = get_game(gameId, player1)
-        action = player1['function'](game, 1, player1["player"].symbol)
+        action = player1['function'](game, 3, player1["player"].symbol)
         print(action)
         make_a_move(gameId, (action[0], action[1]), player1)
         game = get_game(gameId, player1)
@@ -232,6 +234,45 @@ def computer_vs_computer(player1, player2):
         if game.check_win():
             print("player2 win")
             break
+
+
+def computer_vs_computer2(player1, player2):
+    game = make_new_game(12, 6, [])
+    while True:
+        action = player1['function'](game, 1, player1["player"].symbol)
+        game = game.apply_action(action)
+        print(game)
+        if game.check_win():
+            print("player1 win")
+            break
+
+        action = player2['function'](game, 1, player2["player"].symbol)
+        game = game.apply_action(action)
+        print(game)
+        if game.check_win():
+            print("player2 win")
+            break
+
+
+def computer_vs_computer3(player1, gameId):
+    while True:
+        start_time = time.time()
+
+        game = get_game(gameId, player1)
+        action = player1['function'](game, 1, player1["player"].symbol)
+        print(action)
+        make_a_move(gameId, (action[0], action[1]), player1)
+        game = get_game(gameId, player1)
+        print(game)
+        if game.check_win():
+            # print("player win")
+            break
+
+        time.sleep(2)
+        while str(game) == str(get_game(gameId, player1)):
+            time.sleep(2)
+        print('--- %s seconds ---' % (time.time() - start_time))
+
 
 
 USERID = "392"
@@ -266,31 +307,31 @@ def create_a_new_game(player1, player2):
     s = data.decode("utf-8")
     return json.loads(s)["gameId"]
 
-def create_a_new_game2(player1, player2):
-    """return game id"""
-    teamId1, teamId2 = player1["TEAM_ID"], player2["TEAM_ID"]
-    USERID = player1["USERID"]
-    API_KEY = player1["API_KEY"]
-    print(teamId1,teamId2, USERID, API_KEY)
-    payload = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"type\"\r\n\r\ngame\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"gameType\"\r\n\r\nTTT\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"teamId1\"\r\n\r\n"+teamId1+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"teamId2\"\r\n\r\n"+teamId2+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"
-
-    # payload = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"type\"\r\n\r\ngame\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"gameType\"\r\n\r\nTTT\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"teamId1\"\r\n\r\n1223\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"teamId2\"\r\n\r\n1227\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"
-
-    headers = {
-        'content-type': "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW",
-    'authorization': "Basic Og==",
-    'userid': "930",
-    'x-api-key': "31dc33beb3873e2bd595",
-    'cache-control': "no-cache",
-    'postman-token': "d309f41d-1c1e-faa4-1ac5-20c6e4b6fb1c"
-    }
-
-    response = requests.request("POST", url, data=payload, headers=headers)
-    if str(response.status_code).startswith("4"):
-        print("server error!")
-
-    print(response.text)
-    return json.loads(response.text)["gameId"]
+# def create_a_new_game2(player1, player2):
+#     """return game id"""
+#     teamId1, teamId2 = player1["TEAM_ID"], player2["TEAM_ID"]
+#     USERID = player1["USERID"]
+#     API_KEY = player1["API_KEY"]
+#     print(teamId1,teamId2, USERID, API_KEY)
+#     payload = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"type\"\r\n\r\ngame\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"gameType\"\r\n\r\nTTT\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"teamId1\"\r\n\r\n"+teamId1+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"teamId2\"\r\n\r\n"+teamId2+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"
+#
+#     # payload = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"type\"\r\n\r\ngame\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"gameType\"\r\n\r\nTTT\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"teamId1\"\r\n\r\n1223\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"teamId2\"\r\n\r\n1227\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"
+#
+#     headers = {
+#         'content-type': "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW",
+#     'authorization': "Basic Og==",
+#     'userid': "930",
+#     'x-api-key': "31dc33beb3873e2bd595",
+#     'cache-control': "no-cache",
+#     'postman-token': "d309f41d-1c1e-faa4-1ac5-20c6e4b6fb1c"
+#     }
+#
+#     response = requests.request("POST", url, data=payload, headers=headers)
+#     if str(response.status_code).startswith("4"):
+#         print("server error!")
+#
+#     print(response.text)
+#     return json.loads(response.text)["gameId"]
 
 
 def get_game(gameId, player):
@@ -330,34 +371,34 @@ def get_game(gameId, player):
     return game
 
 
-def get_game2(gameId, player):
-    url = "https://www.notexponential.com/aip2pgaming/api/index.php"
-
-    querystring = {"type": "boardString", "gameId": str(gameId)}
-
-    USERID = player["USERID"]
-    API_KEY = player["API_KEY"]
-
-    payload = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"type\"\r\n\r\nboardString\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"gameId\"\r\n\r\n"+str(gameId)+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"
-    headers = {
-        'content-type': "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW",
-        'authorization': "Basic Og==",
-        'userid': USERID,
-        'x-api-key': API_KEY,
-        'cache-control': "no-cache",
-    }
-
-    response = requests.request("GET", url, data=payload, headers=headers, params=querystring)
-    print(response)
-    res = json.loads(response.text)
-    n = len(res['output'])
-    game = Game(n, res['target'])
-    b = res['output'].split("\n")
-    for i in range(n):
-        line = b[i]
-        for j in range(n):
-            game.board.loc[i, j] = line[j]
-    return game
+# def get_game2(gameId, player):
+#     url = "https://www.notexponential.com/aip2pgaming/api/index.php"
+#
+#     querystring = {"type": "boardString", "gameId": str(gameId)}
+#
+#     USERID = player["USERID"]
+#     API_KEY = player["API_KEY"]
+#
+#     payload = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"type\"\r\n\r\nboardString\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"gameId\"\r\n\r\n"+str(gameId)+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"
+#     headers = {
+#         'content-type': "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW",
+#         'authorization': "Basic Og==",
+#         'userid': USERID,
+#         'x-api-key': API_KEY,
+#         'cache-control': "no-cache",
+#     }
+#
+#     response = requests.request("GET", url, data=payload, headers=headers, params=querystring)
+#     print(response)
+#     res = json.loads(response.text)
+#     n = len(res['output'])
+#     game = Game(n, res['target'])
+#     b = res['output'].split("\n")
+#     for i in range(n):
+#         line = b[i]
+#         for j in range(n):
+#             game.board.loc[i, j] = line[j]
+#     return game
 
 
 def make_a_move(gameId, move, player):
@@ -433,8 +474,7 @@ def get_the_move_list(gameId, count, player1, player2):
 
 if __name__ == '__main__':
     # human_vs_computer()
-    computer_vs_computer(p1, p2)
-    # df = pd.read_csv("1.csv", header=None)
-    # game = Game(12, 6)
-    # game.board = df
-    # print(game.check_win())
+
+    gameId = create_a_new_game(p1, p2)
+    print("gameID: ", gameId)
+    computer_vs_computer3(p1, gameId)
