@@ -88,36 +88,38 @@ def make_new_game(n, m, actions):
     return game
 
 
-def max_value(game, alpha, beta, depth):
+def max_value(game, alpha, beta, depth, p):
     if depth == 0 or game.check_win():
-        return evaluate(game)
+        return evaluate(game, p)
     v = -INF
     for action in game.available_actions():
         i, j = action
-        v = max(v, min_value(game.apply_action([i, j, player]), alpha, beta, depth - 1))
+        v = max(v, min_value(game.apply_action([i, j, p]), alpha, beta, depth - 1, p))
         if v >= beta:
             return v
         alpha = max(alpha, v)
     return v
 
 
-def min_value(game, alpha, beta, depth):
+def min_value(game, alpha, beta, depth, p):
     if depth == 0 or game.check_win():
-        return evaluate(game)
+        return evaluate(game, p)
     v = INF
     for action in game.available_actions():
         i, j = action
-        v = min(v, max_value(game.apply_action([i, j, oppo]), alpha, beta, depth-1))
+        v = min(v, max_value(game.apply_action([i, j, oppo if p == player else player]), alpha, beta, depth-1, p))
         if v <= alpha:
             return v
         beta = min(beta, v)
     return v
 
 
-def check_score(s, game):
+def check_score(s, game, p):
     s = s.to_dict()
-    on = s[oppo] if oppo in s else 0
-    pn = s[player] if player in s else 0
+    o1 = oppo if p == player else player
+    p1 = p
+    on = s[o1] if o1 in s else 0
+    pn = s[p1] if p1 in s else 0
     if on == game.m:
         return -INF
     if pn == game.m:
@@ -132,43 +134,43 @@ def check_score(s, game):
         return game.n ** pn
 
 
-def evaluate(game):
+def evaluate(game, p):
     score = 0
     for j in range(game.n):
         for i in range(game.n - game.m + 1):
 
             s = game.board.loc[j, i:i + game.m - 1]
             count = s.value_counts()
-            score += check_score(count, game)
+            score += check_score(count, game, p)
 
             s = game.board.loc[i:i + game.m - 1, j]
             count = s.value_counts()
-            score += check_score(count, game)
+            score += check_score(count, game, p)
 
     for i in range(game.n - game.m+1):
         for j in range(game.n - game.m+1):
             s = pd.Series(np.diag(game.board.loc[i:i + game.m - 1, j:j + game.m - 1]))
             count = s.value_counts()
-            score += check_score(count, game)
+            score += check_score(count, game, p)
 
             s = pd.Series(np.diag(game.board.iloc[:, ::-1].loc[i:i + game.m - 1, j:j + game.m - 1]))
             count = s.value_counts()
-            score += check_score(count, game)
+            score += check_score(count, game, p)
     return score
 
 
-def alpha_beta(game, max_depth=5):
+def alpha_beta(game, max_depth=5, p=player):
 
     best_score = -INF
     best_action = None
 
     for action in game.available_actions():
         i, j = action
-        v = min_value(game.apply_action([i, j, player]), best_score, INF, max_depth-1)
+        v = min_value(game.apply_action([i, j, p]), best_score, INF, max_depth-1, p)
         # print(action, v)
         if v > best_score:
             best_score = v
-            best_action = [i, j, player]
+            best_action = [i, j, p]
 
     return best_action
 
@@ -212,7 +214,7 @@ def computer_vs_computer(player1, player2):
     print("gameID: ", gameId)
     while True:
         game = get_game(gameId, player1)
-        action = player1['function'](game, 1)
+        action = player1['function'](game, 1, player1["player"].symbol)
         print(action)
         make_a_move(gameId, (action[0], action[1]), player1)
         game = get_game(gameId, player1)
@@ -222,7 +224,7 @@ def computer_vs_computer(player1, player2):
             break
 
         game = get_game(gameId, player2)
-        action = player2['function'](game, 1)
+        action = player2['function'](game, 1, player2["player"].symbol)
         print(action)
         make_a_move(gameId, (action[0], action[1]), player2)
         game = get_game(gameId, player2)
@@ -232,7 +234,8 @@ def computer_vs_computer(player1, player2):
             break
 
 
-
+USERID = "392"
+API_KEY = "430b12204290d33a0edc"
 import json
 url = "https://www.notexponential.com/aip2pgaming/api/index.php"
 
@@ -244,11 +247,7 @@ def create_a_new_game(player1, player2):
     import http.client
     conn = http.client.HTTPSConnection("www.notexponential.com")
 
-    payload = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; " \
-              "name=\"type\"\r\n\r\ngame\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; " \
-              "name=\"gameType\"\r\n\r\nTTT\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; " \
-              "name=\"teamId1\"\r\n\r\n"+teamId1+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; " \
-                                                 "name=\"teamId2\"\r\n\r\n"+teamId2+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"
+    payload = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"type\"\r\n\r\ngame\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"gameType\"\r\n\r\nTTT\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"teamId1\"\r\n\r\n"+teamId1+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"teamId2\"\r\n\r\n"+teamId2+"\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"
 
     headers = {
         'content-type': "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW",
