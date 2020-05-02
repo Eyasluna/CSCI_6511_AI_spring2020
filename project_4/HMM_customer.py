@@ -13,6 +13,7 @@ Demo, Video, Testimonial, Pricing, Blog, Payment = "Demo Video Testimonial Prici
 states = [ZERO, Aware, Considering, Experiencing, Ready, Lost, Satisfied]  # states
 observes = [Demo, Video, Testimonial, Pricing, Blog, Payment]           # observations
 
+
 transition_prob = {                 # transition probabilities
     ZERO: {
         Aware: 0.4,
@@ -31,13 +32,19 @@ transition_prob = {                 # transition probabilities
         Ready: 0.3,
         Lost: 0.3
     },
+
     Ready: {
         Lost: 0.2,
-        Satisfied: 0.4
+        Ready: 0.8
+    },
+    Lost: {
+
+    },
+    Satisfied: {
+
     }
 
 }
-
 emission_prob = [                           # emission probabilities, row is the state seq, and col is observation seq
     [0.1, 0.01, 0.05, 0.3, 0.5, 0.0],
     [0.1, 0.01, 0.15, 0.3, 0.4, 0.0],
@@ -70,16 +77,24 @@ def read_observes():
 def get_prob(state, ob):
 
     ps = emission_prob[states.index(state)]
-    if len(ob) == 0:        # if empty line, return  (1-p1) * (1-p2) ...
-        prob = 1
-        for p in ps:
-            prob *= (1-p)
-        return prob
-    else:
-        prob = 1
-        for o in ob:
-            prob *= ps[observes.index(o)]       # return px*py...
-        return prob
+    # if len(ob) == 0:        # if empty line, return  (1-p1) * (1-p2) ...
+    #     prob = 1
+    #     for p in ps:
+    #         prob *= (1-p)
+    #     return prob
+    # else:
+    #     prob = 1
+    #     for o in ob:
+    #         prob *= ps[observes.index(o)]       # return px*py...
+    #     return prob
+
+    p = 1
+    for i in range(len(observes)):
+        if observes[i] not in ob:
+            p *= (1 - ps[i])
+        else:
+            p *= ps[i]
+    return p
 
 
 def B(state, ob):
@@ -105,10 +120,8 @@ def A(s1, s2):          # get the trans prob
         return 0
 
 
-if __name__ == '__main__':
-    obs = read_observes()
-    obs = [[z for z in x.split(",") if z != ""] for x in obs]
-    T = len(obs)
+def viterbi(obs):
+    T = len(obs)        # observation length
 
     T1 = [[0 for _ in range(T)] for _ in range(len(states))]
     T2 = [[0 for _ in range(T)] for _ in range(len(states))]
@@ -123,17 +136,23 @@ if __name__ == '__main__':
             probs = []
 
             for k in states:
-                p = T1[states.index(k)][i-1] * A(k, state) * B(state, obs[i])
+                p = T1[states.index(k)][i - 1] * A(k, state) * B(state, obs[i])
                 probs.append(p)
 
             T1[states.index(state)][i] = max(probs)
             T2[states.index(state)][i] = probs.index(max(probs))
 
-    path = [max([i for i in range(len(states))], key=lambda x: T1[x][T-1])]
+    path = [max([i for i in range(len(states))], key=lambda x: T1[x][T - 1])]
     # print(path)
-    for i in range(T-1, 0, -1):
+    for i in range(T - 1, 0, -1):
         path.append(T2[path[-1]][i])
     # print(path)
     path = path[::-1]
     for p in path:
         print(states[p])
+
+
+if __name__ == '__main__':
+    obs = read_observes()
+    obs = [[z for z in x.split(",") if z != ""] for x in obs]
+    viterbi(obs)
