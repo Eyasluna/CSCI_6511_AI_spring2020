@@ -1,6 +1,9 @@
+# -*- coding: utf-8 -*-
+#author: Yibo Fu
+#CSCI 6511 project_4
 import sys
 
-ZERO = "Zero".upper()
+Zero = "Zero".upper()
 Aware = "Aware".upper()
 Considering = "Considering".upper()
 Experiencing = "Experiencing".upper()
@@ -10,42 +13,22 @@ Lost = "LOST".upper()
 
 Demo, Video, Testimonial, Pricing, Blog, Payment = "Demo Video Testimonial Pricing Blog Payment".upper().split(" ")
 
-states = [ZERO, Aware, Considering, Experiencing, Ready, Lost, Satisfied]  # states
+states = [Zero, Aware, Considering, Experiencing, Ready, Lost, Satisfied]  # states
+
 observes = [Demo, Video, Testimonial, Pricing, Blog, Payment]           # observations
 
-
 transition_prob = {                 # transition probabilities
-    ZERO: {
-        Aware: 0.4,
-    },
-    Aware: {
-        Considering: 0.3,
-        Ready: 0.01,
-        Lost: 0.2
-    },
-    Considering: {
-        Experiencing: 0.2,
-        Ready: 0.02,
-        Lost: 0.3
-    },
-    Experiencing: {
-        Ready: 0.3,
-        Lost: 0.3
-    },
-
-    Ready: {
-        Lost: 0.2,
-        Ready: 0.8
-    },
-    Lost: {
-
-    },
-    Satisfied: {
-
-    }
-
+    Zero: {Aware: 0.4},
+    Aware: {Considering: 0.3, Ready: 0.01, Lost: 0.2},
+    Considering: {Experiencing: 0.2, Ready: 0.02, Lost: 0.3},
+    Experiencing: {Ready: 0.3, Lost: 0.3},
+    Ready: {Lost: 0.2, Ready: 0.8},
+    Lost: {},
+    Satisfied: {}
 }
-emission_prob = [                           # emission probabilities, row is the state seq, and col is observation seq
+
+# emission probabilities, row is the state seq, and col is observation seq
+emission_prob = [
     [0.1, 0.01, 0.05, 0.3, 0.5, 0.0],
     [0.1, 0.01, 0.15, 0.3, 0.4, 0.0],
     [0.2,  0.3, 0.05, 0.4, 0.4, 0.0],
@@ -55,13 +38,14 @@ emission_prob = [                           # emission probabilities, row is the
     [0.4, 0.4, 0.01, 0.05, 0.5, 1.0]
 ]
 
-start_state = {ZERO: 1}     # all start from ZERO
-
+start_state = {Zero: 1}     # all start from ZERO
 
 def read_observes():
     obs = []
     start = False
     with open(sys.argv[1]) as f:
+        if len(sys.argv) < 1:
+            print('Input Format: $python [input file path]')
         for line in f.read().split("\n"):       # read data
             if line.startswith("#"):
                 if not start:
@@ -75,19 +59,7 @@ def read_observes():
 
 
 def get_prob(state, ob):
-
     ps = emission_prob[states.index(state)]
-    # if len(ob) == 0:        # if empty line, return  (1-p1) * (1-p2) ...
-    #     prob = 1
-    #     for p in ps:
-    #         prob *= (1-p)
-    #     return prob
-    # else:
-    #     prob = 1
-    #     for o in ob:
-    #         prob *= ps[observes.index(o)]       # return px*py...
-    #     return prob
-
     p = 1
     for i in range(len(observes)):
         if observes[i] not in ob:
@@ -102,7 +74,7 @@ def B(state, ob):
 
 
 def get_start_prob(state):
-    if state == ZERO:
+    if state == Zero:
         return 1
     else:
         return 0
@@ -143,10 +115,10 @@ def viterbi(obs):
             T2[states.index(state)][i] = probs.index(max(probs))
 
     path = [max([i for i in range(len(states))], key=lambda x: T1[x][T - 1])]
-    # print(path)
+
     for i in range(T - 1, 0, -1):
         path.append(T2[path[-1]][i])
-    # print(path)
+
     path = path[::-1]
     for p in path:
         print(states[p])
